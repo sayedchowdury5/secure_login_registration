@@ -1,61 +1,74 @@
 
 <?php
-	require ('connect.php');
-	
-	if(isset($_POST['login'])){
-		session_start();
-		if ($_POST['user_email'] != "" || $_POST['user_password'] != "") {
-			$user_email = $_POST['user_email'];
+	require_once ('connect.php');
+
+	if(isset($_POST['log_in'])){
+		if ($_POST['user_name'] != "" || $_POST['user_password'] != "") {
+			//collect user inputs
+			$user_name = $_POST['user_name'];
 			$user_password = $_POST['user_password'];
-			$sql = "SELECT * FROM users WHERE user_email = ? ";
-			$query = $conn->prepare($sql);
-            $query->execute(array($user_email));
-			$row = $query->rowCount();
-			$fetch = $query->fetch();
+
+			//select user details from database
+			$sql = "SELECT * FROM users WHERE name = ? ";
+			$prepare = $conn->prepare($sql);
+            $prepare->execute(array($user_name));
+			$rowCount = $prepare->rowCount();
+			$fetch = $prepare->fetch();
 			
-			if ($row > 0) {
-				if (password_verify($user_password, $fetch['user_password'])) {
-					echo "<script>alert('You Successfully logged in'); window.location.href = 'home.php';</script>";
+			if ($rowCount > 0) {
+				//keep session record
+				session_start();
+				$_SESSION['log_in'] = true;
+				$_SESSION['user_name'] = $user_name;
+				
+				//verify user password before login
+				if (password_verify($user_password, $fetch['password'])) {
+					echo "<script>alert('You Successfully logged in'); window.location.href = 'index-1.php';</script>";
 				} else {
-					echo "<script>alert('Your Credetials not match!'); window.location.href = 'index.php';</script>";
+					echo "<script>alert('Your Credetials not match!'); window.location.href = 'auth-sign-in-social.htm';</script>";
 				}
 			} else {
-				echo "<script>alert('Your Credetials not match!'); window.location.href = 'index.php';</script>";
+				echo "<script>alert('Your Credetials not match!'); window.location.href = 'auth-sign-in-social.htm';</script>";
 			}
 		}
 	}
 	
 	if(isset($_POST['register'])){
-		if ($_POST['user_name'] != "" || $_POST['user_email'] != "" || $_POST['user_password'] != "" || $_POST['user_confirm_password'] != "") {
+		if ($_POST['user_name'] != "" || $_POST['user_password'] != "" || $_POST['user_confirm_password'] != "") {
+			//collect user inputs
 			$user_name = $_POST['user_name'];
-			$user_email = $_POST['user_email'];
 			$user_password = $_POST['user_password'];
 			$user_confirm_password = $_POST['user_confirm_password'];
 			$password = "";
 			$hash = "";
-
-			$a = "SELECT user_email FROM users WHERE user_email = ?";
-			$p = $conn->prepare($a);
-			$p->execute([$user_email]);
+			
+			//select user details from database to compare existing user
+			$s = "SELECT name FROM users WHERE name = ?";
+			$p = $conn->prepare($s);
+			$p->execute([$user_name]);
 			$r = $p->rowCount();
+
 			if ($r > 0) {
-				echo "<script> alert('This email already exist.'); window.location.href = 'test.php'; </script>";
+				echo "<script> alert('This name already exist.'); window.location.href = 'auth-sign-up-social-header-footer.htm'; </script>";
+				//compare user password inputs
 			} elseif($user_password != $user_confirm_password) {
-				echo "<script> alert('Password not match.'); window.location.href = 'test.php'; </script>";
+				echo "<script> alert('Password not match.'); window.location.href = 'auth-sign-up-social-header-footer.htm'; </script>";
+
+				//encrypt user passwords to store into database
 			} else {
 				$password = $user_password;
 				$hash = password_hash($password, PASSWORD_DEFAULT);
-
-				$sql = "INSERT INTO users (user_name, user_email, user_password) VALUES (?, ?, ?)";
+				
+				//insert user details into database
+				$sql = "INSERT INTO users (name, password) VALUES (?, ?)";
 				$prepare = $conn->prepare($sql);
-				$prepare->execute(array($user_name, $user_email, $hash));
+				$prepare->execute(array($user_name, $hash));
 				if (!$prepare) {
-					echo "<script>alert('Something wrong! Please try again.'); window.location.href = 'index.php';</script>";
+					echo "<script>alert('Something wrong! Please try again.'); window.location.href = 'auth-sign-up-social-header-footer.htm';</script>";
 				} else {
-					echo "<script>alert('Successfully Registration Done. You can Login now'); window.location.href = 'test.php';</script>";
+					echo "<script>alert('Successfully Registration Done.'); window.location.href = 'index-1.htm';</script>";
 				}
 			}
 		}
 	}
-
 ?>
