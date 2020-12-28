@@ -16,13 +16,14 @@
 			$fetch = $prepare->fetch();
 			
 			if ($rowCount > 0) {
-				//keep session record
-				session_start();
-				$_SESSION['login'] = true;
-				$_SESSION['user_email'] = $user_email;
 				
 				//verify user password before login
 				if (password_verify($user_password, $fetch['user_password'])) {
+					
+					//keep session record
+					session_start();
+					$_SESSION['logged_in'] = true;
+					$_SESSION['user_email'] = $user_email;
 					echo "<script>alert('You Successfully logged in'); window.location.href = 'index-1.php';</script>";
 				} else {
 					echo "<script>alert('Your Credetials not match!'); window.location.href = 'auth-sign-in-social.htm';</script>";
