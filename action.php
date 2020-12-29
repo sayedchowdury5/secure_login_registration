@@ -43,32 +43,53 @@
 			$user_confirm_password = $_POST['user_confirm_password'];
 			$password = "";
 			$hash = "";
-			
+
 			//select user details from database to compare existing user
-			$s = "SELECT user_email FROM users WHERE user_email = ?";
-			$p = $conn->prepare($s);
+			$a = "SELECT user_email FROM users WHERE user_email = ?";
+			$p = $conn->prepare($a);
 			$p->execute([$user_email]);
 			$r = $p->rowCount();
 
 			if ($r > 0) {
-				echo "<script> alert('This name already exist.'); window.location.href = 'auth-sign-up-social-header-footer.htm'; </script>";
+				echo "<script> alert('This email already exist.'); window.location.href = 'test.php'; </script>";
 				//compare user password inputs
 			} elseif($user_password != $user_confirm_password) {
-				echo "<script> alert('Password not match.'); window.location.href = 'auth-sign-up-social-header-footer.htm'; </script>";
-
+				echo "<script> alert('Password not match.'); window.location.href = 'test.php'; </script>";
 				//encrypt user passwords to store into database
 			} else {
 				$password = $user_password;
 				$hash = password_hash($password, PASSWORD_DEFAULT);
-				
-				//insert user details into database
-				$sql = "INSERT INTO users (user_name, user_email, user_password) VALUES (?, ?, ?)";
-				$prepare = $conn->prepare($sql);
-				$prepare->execute(array($user_name, $user_email, $hash));
-				if (!$prepare) {
-					echo "<script>alert('Something wrong! Please try again.'); window.location.href = 'auth-sign-up-social-header-footer.htm';</script>";
+
+				//prepare welcome email for user
+				$to = $user_email; // Send email to our user
+				$subject = "Welcome Mail"; // Give the email a subject 
+				$emessage = "welcome Dear, for registering in our system.";
+
+				// if emessage is more than 70 chars
+				$emessage = wordwrap($emessage, 70, "\r\n");
+
+				// Our emessage above including the link
+				$headers   = array();
+				$headers[] = "MIME-Version: 1.0";
+				$headers[] = "Content-type: text/plain;charset=UTF-8";
+				//$headers[] = "From: Katekmall Admin <noreply@yourdomain.com>";
+				$headers[] = "Subject: {$subject}";
+				//$headers[] = "X-Mailer: PHP/".phpversion(); // Set from headers
+
+				$send = mail($to, $subject, $emessage, implode("\r\n", $headers));
+
+				if (!$send) {
+					echo "<script>alert('Email can not sent!'); window.location.href = 'test.php';</script>";
 				} else {
-					echo "<script>alert('Successfully Registration Done.'); window.location.href = 'index-1.htm';</script>";
+					//insert user details into database
+					$sql = "INSERT INTO users (user_name, user_email, user_password) VALUES (?, ?, ?)";
+					$prepare = $conn->prepare($sql);
+					$prepare->execute(array($user_name, $user_email, $hash));
+					if (!$prepare) {
+						echo "<script>alert('Something wrong! Please try again.'); window.location.href = 'index.php';</script>";
+					} else {
+						echo "<script>alert('Successfully Registration Done. Check your email now then You can Login'); window.location.href = 'test.php';</script>";
+					}
 				}
 			}
 		}
